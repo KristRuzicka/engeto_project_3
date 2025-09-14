@@ -8,15 +8,12 @@ email: krist.ruzickova@gmail.com
 
 import requests
 from bs4 import BeautifulSoup as bs
-import sys
 import csv
 import argparse
-import sys
-from typing import Optional
 
 parser = argparse.ArgumentParser()
 parser.add_argument("url_region", type = str, help=" Give url of selected region.")
-parser.add_argument("file_name", help= "Give a file name for extracting results in csv format.")
+parser.add_argument("file_name", help = "Give a file name for extracting results in csv format.")
 
 args = parser.parse_args()
 print("Url:", args.url_region)
@@ -26,12 +23,12 @@ if "csv" in args.url_region:
     print("Check position of argumests, first give url then file name.")
     exit()
 
-if "https://www.volby.cz/pls/ps2017nss/ps32?xjazyk=CZ&xkraj=11&xnumnuts" not in args.url_region:
+if "https://www.volby.cz/pls/ps2017nss/ps32?xjazyk=CZ&xkraj=" not in args.url_region:
     print("Give correct url")
     exit()
 
 #Define functions to get village names and codes
-url_region = "https://www.volby.cz/pls/ps2017nss/ps32?xjazyk=CZ&xkraj=11&xnumnuts=6204"
+url_region = args.url_region
 
 def get_parsed_response(url_region):
     return bs(requests.get(url_region).text, features="html.parser")
@@ -67,7 +64,10 @@ village_codes = get_village_codes(split_text)
 names = get_name(split_text)
 
 # Create csv file
-csv_soubor = open("vysledky_3.csv", mode="a", encoding="UTF-8")
+csv_soubor = open(args.file_name, mode="w", encoding="UTF-8")
+
+#https://www.volby.cz/pls/ps2017nss/ps32?xjazyk=CZ&xkraj=9&xnumnuts=5301
+#https://www.volby.cz/pls/ps2017nss/ps311?xjazyk=CZ&xkraj=9&xobec=571181&xvyber=5301
 
 # Get url for all village codes
 for idx, code in enumerate(village_codes):
@@ -94,14 +94,11 @@ for idx, code in enumerate(village_codes):
         "Valid": valid_votes,
     }
     rows = row | parties_with_votes_dict
-    print(rows)
-
+   
     # Write results in csv file
     if idx == 0:
         zapisovac = csv.DictWriter(csv_soubor,fieldnames=rows.keys(), delimiter=";")
         zapisovac.writeheader()
     zapisovac.writerow(rows)
+    csv_soubor.close()
 
-"""
-sys.argv(url_uzem_celek, vysledky_breclav)
-"""
