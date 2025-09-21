@@ -3,7 +3,6 @@ main.py: třetí projekt do Engeto Online Python Akademie
 author: Kristýna Růžičková
 email: krist.ruzickova@gmail.com
 """
-
 import requests
 from bs4 import BeautifulSoup as bs
 import csv
@@ -83,17 +82,16 @@ except AttributeError:
         print("No url available.")
         exit()
         
-
-# Call functions to get village codes and names, checking for exceptions
+# Call functions to get village codes and names
 codes = get_village_codes(parsed_html_reg)
 locations = get_name(parsed_html_reg)
 
-# Define for loop
+# Define a for loop
 for idx, url in enumerate(village_urls):
     codes[idx]
     locations[idx]
 
-    # Call function to get parsed html, check for exceptions
+    # Call function to get parsed html
     parsed_html_vill = get_parsed_html(url)
 
     # Call functions to get election results
@@ -102,9 +100,6 @@ for idx, url in enumerate(village_urls):
     valid_votes = get_valid_votes(parsed_html_vill).get_text()
     parties = get_party(parsed_html_vill)
     votes_for_party = get_votes_for_party(parsed_html_vill)
-
-    # Create dictionary for number of votes for each party
-    parties_with_votes_dict = dict(zip(parties, votes_for_party))
 
     # Create dictionary for csv file
     row = {
@@ -115,9 +110,9 @@ for idx, url in enumerate(village_urls):
         "Valid": valid_votes,
     }
     row.update(dict(zip(parties, votes_for_party)))
+    print(row)
 
     # Write results in csv file
-
     if url == village_urls[0]:
         zapisovac = csv.DictWriter(csv_soubor, fieldnames=row.keys(), delimiter=";")
         zapisovac.writeheader()
