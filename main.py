@@ -1,3 +1,5 @@
+#election_scraper_env\Scripts\Activate
+
 """
 main.py: třetí projekt do Engeto Online Python Akademie
 author: Kristýna Růžičková
@@ -41,14 +43,27 @@ def get_party(parsed_html_vill):
 def get_votes_for_party(parsed_html_vill):
     return [party.get_text() for party in parsed_html_vill.find_all("td", headers="t1sa2 t1sb3")]
 
-# Define script parameters
-parser = argparse.ArgumentParser()
-parser.add_argument("url_region", type = str, help=" Give url of selected region.")
-parser.add_argument("file_name", help = "Give a file name for extracting results in csv format.")
+def get_election_results(parsed_html_vill):
+    return{
+    "Codes": codes[idx],
+    "Location": locations[idx],
+    "registered": get_registered(parsed_html_vill).get_text(), 
+    "envelopes": get_envelopes(parsed_html_vill).get_text(),
+    "valid_votes": get_valid_votes(parsed_html_vill).get_text(),
+    }
 
-args = parser.parse_args()
-print("Url:", args.url_region)
-print("Filename:", args.file_name)
+def getArgs(args=None):
+    parser = argparse.ArgumentParser()
+    parser.add_argument("url_region", type = str, help=" Give url of selected region.")
+    parser.add_argument("file_name", help = "Give a file name for extracting results in csv format.")
+    return parser.parse_args(args)
+
+def print_parameters():
+    print("Url:", args.url_region)
+    print("Filename:", args.file_name)
+    
+args = getArgs()
+url_region = args.url_region
 
 # Check for correct parameters
 try:
@@ -65,12 +80,7 @@ except ValueError as e:
     print(e)
     exit()
 
-url_region = args.url_region
-
-# Create csv file
-csv_soubor = open(args.file_name, mode="w", encoding="UTF-8", newline ="")
-
-# Call functions to get village urls, check for exceptions
+# Check for exceptions 
 try:
     parsed_html_reg = get_parsed_html(url_region)
 except requests.exceptions.RequestException as e:
@@ -81,41 +91,27 @@ try:
 except AttributeError:
         print("No url available.")
         exit()
-        
-# Call functions to get village codes and names
+
 codes = get_village_codes(parsed_html_reg)
 locations = get_name(parsed_html_reg)
 
-# Define a for loop
 for idx, url in enumerate(village_urls):
     codes[idx]
     locations[idx]
-
-    # Call function to get parsed html
     parsed_html_vill = get_parsed_html(url)
+    data = get_election_results(parsed_html_vill)
+    print(data)
 
-    # Call functions to get election results
-    registered = get_registered(parsed_html_vill).get_text() 
-    envelopes = get_envelopes(parsed_html_vill).get_text()
-    valid_votes = get_valid_votes(parsed_html_vill).get_text()
-    parties = get_party(parsed_html_vill)
-    votes_for_party = get_votes_for_party(parsed_html_vill)
+parties = get_party(parsed_html_vill)
+votes_for_party = get_votes_for_party(parsed_html_vill)
+data.update(dict(zip(parties, votes_for_party)))
+print(data)
 
-    # Create dictionary for csv file
-    row = {
-        "Codes": codes[idx],
-        "Location": locations[idx],
-        "Registered": registered,
-        "Envelopes": envelopes,
-        "Valid": valid_votes,
-    }
-    row.update(dict(zip(parties, votes_for_party)))
-    print(row)
-
-    # Write results in csv file
-    if url == village_urls[0]:
-        zapisovac = csv.DictWriter(csv_soubor, fieldnames=row.keys(), delimiter=";")
-        zapisovac.writeheader()
-    zapisovac.writerow(row)
+# Write results in csv file
+if url == village_urls[0]:
+     zapisovac = csv.DictWriter(csv_soubor, fieldnames=row.keys(), delimiter=";")
+     zapisovac.writeheader()
+zapisovac.writerow(data)
 csv_soubor.close()
+
 
