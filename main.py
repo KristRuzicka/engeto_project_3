@@ -43,14 +43,20 @@ def get_party(parsed_html_vill):
 def get_votes_for_party(parsed_html_vill):
     return [party.get_text() for party in parsed_html_vill.find_all("td", headers="t1sa2 t1sb3")]
 
-def get_election_results(parsed_html_vill):
+def get_election_results(parsed_html_vill, codes, locations):
     return{
-    "Codes": codes[idx],
-    "Location": locations[idx],
-    "registered": get_registered(parsed_html_vill).get_text(), 
-    "envelopes": get_envelopes(parsed_html_vill).get_text(),
-    "valid_votes": get_valid_votes(parsed_html_vill).get_text(),
+    "Codes": codes,
+    "Location": locations,
+    "Registered": get_registered(parsed_html_vill).get_text(), 
+    "Envelopes": get_envelopes(parsed_html_vill).get_text(),
+    "Valid_votes": get_valid_votes(parsed_html_vill).get_text(),
     }
+
+def save_results_to_csv(results, filename="vysledky.csv"):
+    with open(filename, mode="w", newline="", encoding="utf-8") as csv_soubor:
+        zapisovac = csv.DictWriter(csv_soubor, fieldnames=results[0].keys(), delimiter=";")
+        zapisovac.writeheader()
+        zapisovac.writerows(results)
 
 def getArgs(args=None):
     parser = argparse.ArgumentParser()
@@ -64,6 +70,7 @@ def print_parameters():
     
 args = getArgs()
 url_region = args.url_region
+file_name = args.file_name
 
 # Check for correct parameters
 try:
@@ -95,23 +102,17 @@ except AttributeError:
 codes = get_village_codes(parsed_html_reg)
 locations = get_name(parsed_html_reg)
 
+results = []
+
 for idx, url in enumerate(village_urls):
-    codes[idx]
-    locations[idx]
     parsed_html_vill = get_parsed_html(url)
-    data = get_election_results(parsed_html_vill)
-    print(data)
+    data = get_election_results(parsed_html_vill, codes[idx], locations[idx])
+    parties = get_party(parsed_html_vill)
+    votes_for_party = get_votes_for_party(parsed_html_vill)
+    data.update(dict(zip(parties, votes_for_party)))
+    results.append(data)
+    
+save_results_to_csv(results, file_name)
 
-parties = get_party(parsed_html_vill)
-votes_for_party = get_votes_for_party(parsed_html_vill)
-data.update(dict(zip(parties, votes_for_party)))
-print(data)
-
-# Write results in csv file
-if url == village_urls[0]:
-     zapisovac = csv.DictWriter(csv_soubor, fieldnames=row.keys(), delimiter=";")
-     zapisovac.writeheader()
-zapisovac.writerow(data)
-csv_soubor.close()
 
 
